@@ -11,7 +11,7 @@
     --border: #d1d5db;
     --text: #1e293b;
     --muted: #6b7280;
-    --primary: #0071e3; /* Apple 藍 */
+    --primary: #0071e3;
     --primary-hover: #0062c8;
     --primary-press-top: #0a67c9;
     --primary-press-bottom: #084d98;
@@ -25,7 +25,6 @@
   body {
     margin: 0;
     font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", Helvetica, Arial, sans-serif;
-    background: --bg;
     background: var(--bg);
     color: var(--text);
     line-height: 1.6;
@@ -48,8 +47,14 @@
   .field { display:flex; flex-direction: column; gap: 6px; margin-bottom: 16px; }
   label { font-weight: 600; font-size: 15px; }
   input[type="number"] {
-    width: 100%; padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius);
-    font-size: 16px; background: #fff; color: var(--text); outline: none;
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    font-size: 16px;
+    background: #fff;
+    color: var(--text);
+    outline: none;
     transition: border .2s ease, box-shadow .2s ease, transform .06s ease;
   }
   input[type="number"]::placeholder { color: #9ca3af; }
@@ -60,11 +65,16 @@
 
   .btns { display:flex; flex-direction: column; gap: 12px; margin-top: 8px; }
   button {
-    width: 100%; padding: 14px 16px; border: none; border-radius: 14px;
-    font-size: 17px; font-weight: 600; letter-spacing: .3px; cursor: pointer;
+    width: 100%;
+    padding: 14px 16px;
+    border: none;
+    border-radius: 14px;
+    font-size: 17px;
+    font-weight: 600;
+    letter-spacing: .3px;
+    cursor: pointer;
     transition: transform .06s ease, box-shadow .2s ease, background .2s ease;
   }
-  /* Apple 式動態按鈕 */
   button.primary {
     color: #fff;
     background: linear-gradient(180deg, var(--primary), #066ddc);
@@ -98,14 +108,24 @@
     gap: 12px;
   }
   .coin {
-    background: #f9fafb; border: 1px solid var(--border); border-radius: var(--radius);
-    padding: 12px; text-align: center;
+    background: #f9fafb;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px;
+    text-align: center;
   }
   .coin .denom { font-size: 14px; color: var(--muted); }
-  .coin .count { margin-top: 4px; font-size: 30px; font-weight: 800; color: var(--primary); }
+  .coin .count {
+    margin-top: 4px;
+    font-size: 30px;
+    font-weight: 800;
+    color: var(--primary);
+  }
 
   .panel {
-    background: #f9fafb; border: 1px solid var(--border); border-radius: var(--radius);
+    background: #f9fafb;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
     padding: 12px 16px;
   }
   .row { display:flex; justify-content: space-between; font-size: 15px; padding: 4px 0; }
@@ -116,7 +136,7 @@
 <body>
   <header>
     <h1>湊齊10000元</h1>
-    <div class="sub">小面額優先；需至少 6 枚 500 元。若無法剛好，顯示最接近 10000 的結果。</div>
+    <div class="sub">小面額優先；若無法剛好，顯示最接近 10000 的結果。</div>
   </header>
 
   <section class="card">
@@ -125,7 +145,7 @@
       <input id="c1000" type="number" min="0" step="1" placeholder="請輸入數量">
     </div>
     <div class="field">
-      <label for="c500">500 元可用數量（至少 6）</label>
+      <label for="c500">500 元可用數量</label>
       <input id="c500" type="number" min="0" step="1" placeholder="請輸入數量">
     </div>
     <div class="field">
@@ -174,54 +194,40 @@ function getInputs() {
   };
 }
 
-function totalValueCombo(sol) {
-  // 嚴格依「各面額 × 使用數量」計算總金額
-  return (sol[1000]||0)*1000 + sol[500]*500 + sol[100]*100 + sol[50]*50 + sol[10]*10 + sol[1]*1;
+function totalInputAmount(avail) {
+  return avail[1000]*1000 + avail[500]*500 + avail[100]*100 + avail[50]*50 + avail[10]*10 + avail[1];
 }
-
 function totalValue(avail) {
   return 1000*avail[1000] + 500*avail[500] + 100*avail[100] + 50*avail[50] + 10*avail[10] + 1*avail[1];
 }
 
-// 在指定 target 內找到（小面額優先 + 至少 6 枚 500）的組合
 function solveExactForTarget(target, avail) {
-  if (avail[500] < 6) return null;
-
-  // 1 元（使餘數可被 10 整除）
+  // 不再限制 500 元至少 6 張
   const max1 = Math.min(avail[1], target);
   for (let use1 = max1 - (max1 % 10); use1 >= 0; use1 -= 10) {
     let remAfter1 = target - use1;
-
-    // 10 元（使餘數可被 50 整除）
     let max10 = Math.min(avail[10], Math.floor(remAfter1 / 10));
     const needMod5 = (remAfter1 / 10) % 5;
     max10 = max10 - ((max10 - needMod5 + 5) % 5);
 
     for (let use10 = max10; use10 >= 0; use10 -= 5) {
-      let remAfter10 = remAfter1 - 10 * use10; // 50 的倍數
-
-      // 50 元（使餘數可被 100 整除）
+      let remAfter10 = remAfter1 - 10 * use10;
       let max50 = Math.min(avail[50], Math.floor(remAfter10 / 50));
       const parity = (remAfter10 / 50) % 2;
       if ((max50 % 2) !== parity) max50--;
 
       for (let use50 = max50; use50 >= 0; use50 -= 2) {
-        let remAfter50 = remAfter10 - 50 * use50; // 100 的倍數
-
-        // 100 元盡量用；剩下由 500 / 1000 補
+        let remAfter50 = remAfter10 - 50 * use50;
         let use100 = Math.min(avail[100], Math.floor(remAfter50 / 100));
         let remAfter100 = remAfter50 - 100 * use100;
 
         if (remAfter100 % 500 !== 0) continue;
 
-        const units = remAfter100 / 500; // 需要多少個「500 單位」
-        let best = allocate500and1000(units, avail[500], avail[1000], 6);
+        const units = remAfter100 / 500;
+        let best = allocate500and1000(units, avail[500], avail[1000]);
         if (!best) continue;
 
         let { use500, use1000 } = best;
-
-        if (use1 > avail[1] || use10 > avail[10] || use50 > avail[50] || use100 > avail[100] ||
-            use500 > avail[500] || use1000 > avail[1000]) continue;
 
         return {1000:use1000, 500:use500, 100:use100, 50:use50, 10:use10, 1:use1, sum: target};
       }
@@ -230,22 +236,19 @@ function solveExactForTarget(target, avail) {
   return null;
 }
 
-// 將 remAfter100 (以 500 為單位) 分配到 500/1000：500 優先、確保至少 min500
-function allocate500and1000(units, avail500, avail1000, min500) {
+function allocate500and1000(units, avail500, avail1000) {
   let a = Math.min(avail500, units);
-  if ((units - a) % 2 !== 0) a -= 1; // 確保剩餘為偶數，才能由 1000 補
-  for (; a >= Math.min(min500, units); a -= 2) {
+  if ((units - a) % 2 !== 0) a -= 1;
+  for (; a >= 0; a--) {
     const b = (units - a) / 2;
-    if (b <= avail1000) return { use500: a, use1000: b };
+    if (b >= 0 && b <= avail1000 && Number.isInteger(b)) return { use500: a, use1000: b };
   }
   return null;
 }
 
-// 找最接近 target 的可行解
 function solveClosest(target, avail) {
   let exact = solveExactForTarget(target, avail);
   if (exact) return exact;
-
   const maxUp = totalValue(avail);
   const maxRadius = Math.max(target, maxUp - target);
 
@@ -273,10 +276,10 @@ function coinBox(label, count) {
   `;
 }
 
-function renderResult(sol, target) {
+function renderResult(sol, target, avail) {
   const el = document.getElementById('result');
   if (!sol) {
-    el.innerHTML = `<div class="status err">無法找到符合條件的組合（需至少 6 枚 500 元）。</div>`;
+    el.innerHTML = `<div class="status err">無法找到符合條件的組合。</div>`;
     return;
   }
 
@@ -299,22 +302,20 @@ function renderResult(sol, target) {
     </div>
   `;
 
-  // 專門顯示與目標的差距（避免和「總金額」混淆）
   const deltaPanel = `
     <div class="panel">
       <div class="row"><div class="label">與 10000 的差</div><div class="value">${diff > 0 ? "+" : ""}${diff}</div></div>
     </div>
   `;
 
-  // 你要的「總金額」：各面額 × 使用數量 的加總（= 這次組合的實際金額）
-  const totalAmount = totalValueCombo(sol).toLocaleString();
-  const totalPanel = `
+  const inputTotal = totalInputAmount(avail).toLocaleString();
+  const inputTotalPanel = `
     <div class="panel">
-      <div class="row"><div class="label">總金額（各面額 × 使用數量加總）</div><div class="value">${totalAmount}</div></div>
+      <div class="row"><div class="label">總金額（依輸入數量 × 面額）</div><div class="value">${inputTotal}</div></div>
     </div>
   `;
 
-  el.innerHTML = status + title + grid + deltaPanel + totalPanel;
+  el.innerHTML = status + title + grid + deltaPanel + inputTotalPanel;
 }
 
 function scrollToResult() {
@@ -324,13 +325,8 @@ function scrollToResult() {
 
 document.getElementById('calcBtn').addEventListener('click', () => {
   const avail = getInputs();
-  if (avail[500] < 6) {
-    document.getElementById('result').innerHTML = `<div class="status err">500 元可用數量必須至少 6。</div>`;
-    scrollToResult();
-    return;
-  }
   const sol = solveClosest(TARGET, avail);
-  renderResult(sol, TARGET);
+  renderResult(sol, TARGET, avail);
   requestAnimationFrame(scrollToResult);
 });
 
